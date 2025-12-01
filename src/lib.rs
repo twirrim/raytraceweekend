@@ -27,6 +27,30 @@ impl Vec3 {
 
         println!("{rbyte} {gbyte} {bbyte}");
     }
+
+    pub fn dot(self, other: Vec3) -> f32 {
+        self.x * other.x + self.y * other.y + self.z * other.z
+    }
+
+    pub fn cross(self, other: Vec3) -> Vec3 {
+        Self {
+            x: self.y * other.z - self.z * other.y,
+            y: self.z * other.x - self.x * other.z,
+            z: self.x * other.y - self.y * other.x,
+        }
+    }
+
+    pub fn length_squared(&self) -> f32 {
+        self.x * self.x + self.y * self.y + self.z * self.z
+    }
+
+    pub fn length(&self) -> f32 {
+        self.length_squared().sqrt()
+    }
+
+    pub fn unit_vector(self) -> Vec3 {
+        self / self.length()
+    }
 }
 
 impl fmt::Display for Vec3 {
@@ -149,7 +173,7 @@ impl DivAssign<f32> for Vec3 {
 impl Mul<Vec3> for f32 {
     type Output = Vec3;
     fn mul(self, v: Vec3) -> Vec3 {
-        Vec3::new(v.x * self, v.y * self, v.z * self)
+        v * self
     }
 }
 
@@ -157,26 +181,18 @@ impl Div<Vec3> for f32 {
     type Output = Vec3;
 
     fn div(self, v: Vec3) -> Vec3 {
-        Vec3::new(v.x / self, v.y / self, v.z / self)
+        v / self
     }
 }
 
 pub struct Ray {
-    origin: Point3,
-    direction: Vec3,
+    pub origin: Point3,
+    pub direction: Vec3,
 }
 
 impl Ray {
     pub fn new(origin: Point3, direction: Vec3) -> Self {
         Self { origin, direction }
-    }
-
-    pub fn origin(&self) -> Point3 {
-        self.origin
-    }
-
-    pub fn direction(&self) -> Vec3 {
-        self.direction
     }
 
     pub fn at(&self, t: f32) -> Point3 {
@@ -327,8 +343,6 @@ mod tests {
         let origin = Vec3::new(1.0, 1.0, 1.0);
         let direction = Vec3::new(2.0, 2.0, 2.0);
         let r = Ray::new(origin, direction);
-        assert_eq!(r.direction(), direction);
-        assert_eq!(r.origin(), origin);
         assert_eq!(r.at(1.0), Point3::new(3.0, 3.0, 3.0));
         assert_eq!(r.at(2.0), Point3::new(5.0, 5.0, 5.0));
     }
