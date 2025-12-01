@@ -5,9 +5,8 @@ edition = "2024"
 
 [dependencies]
 log = "0.4.28"
-simple_logger = {version="5.1.0", features=["stderr"]}
+env_logger = "0.11"
 
 [dev-dependencies]
 rstest = "0.26.1"
 test-log = { version = "0.2", features = ["trace"] }
-env_logger = "0.11"
