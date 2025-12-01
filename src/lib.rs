@@ -46,11 +46,11 @@ impl Mul for Vec3 {
     }
 }
 
-impl MulAssign<f32> for Vec3 {
-    fn mul_assign(&mut self, t: f32) {
-        self.x *= t;
-        self.y *= t;
-        self.z *= t;
+impl MulAssign for Vec3 {
+    fn mul_assign(&mut self, rhs: Self) {
+        self.x *= rhs.x;
+        self.y *= rhs.y;
+        self.z *= rhs.z;
     }
 }
 
@@ -65,11 +65,11 @@ impl Div for Vec3 {
     }
 }
 
-impl DivAssign<f32> for Vec3 {
-    fn div_assign(&mut self, t: f32) {
-        self.x /= t;
-        self.y /= t;
-        self.z /= t;
+impl DivAssign for Vec3 {
+    fn div_assign(&mut self, rhs: Self) {
+        self.x /= rhs.x;
+        self.y /= rhs.y;
+        self.z /= rhs.z;
     }
 }
 
@@ -122,11 +122,27 @@ impl Mul<f32> for Vec3 {
     }
 }
 
+impl MulAssign<f32> for Vec3 {
+    fn mul_assign(&mut self, t: f32) {
+        self.x *= t;
+        self.y *= t;
+        self.z *= t;
+    }
+}
+
 impl Div<f32> for Vec3 {
     type Output = Self;
 
     fn div(self, t: f32) -> Self {
         self * (1.0 / t) // Optimization: Multiply by inverse is faster than division
+    }
+}
+
+impl DivAssign<f32> for Vec3 {
+    fn div_assign(&mut self, t: f32) {
+        self.x /= t;
+        self.y /= t;
+        self.z /= t;
     }
 }
 
@@ -186,26 +202,10 @@ mod tests {
         Vec3::new(1.0, 1.0, 1.0),
         Vec3::new(0.5, 0.5, 0.5)
     )]
-    fn test_add(#[case] a: Vec3, #[case] b: Vec3, #[case] want: Vec3) {
+    fn test_add(#[case] mut a: Vec3, #[case] b: Vec3, #[case] want: Vec3) {
         log::info!("{:?} + {:?} = {:?}?", a, b, want);
         assert_eq!(a + b, want);
-    }
-
-    #[test_log::test(rstest)]
-    #[rstest]
-    #[case(
-        Vec3::new(2.0, 2.0, 2.0),
-        Vec3::new(1.0, 1.0, 1.0),
-        Vec3::new(3.0, 3.0, 3.0)
-    )]
-    #[case(
-        Vec3::new(-0.5, -0.5, -0.5),
-        Vec3::new(1.0, 1.0, 1.0),
-        Vec3::new(0.5, 0.5, 0.5)
-    )]
-    fn test_add_assign(#[case] mut a: Vec3, #[case] b: Vec3, #[case] want: Vec3) {
         a += b;
-        log::info!("{:?} + {:?} = {:?}?", a, b, want);
         assert_eq!(a, want);
     }
 
@@ -221,9 +221,11 @@ mod tests {
         Vec3::new(1.0, 1.0, 1.0),
         Vec3::new(-0.5, -0.5, -0.5)
     )]
-    fn test_sub(#[case] a: Vec3, #[case] b: Vec3, #[case] want: Vec3) {
+    fn test_sub(#[case] mut a: Vec3, #[case] b: Vec3, #[case] want: Vec3) {
         log::info!("{:?} - {:?} = {:?}?", a, b, want);
         assert_eq!(a - b, want);
+        a -= b;
+        assert_eq!(a, want);
     }
 
     #[test_log::test(rstest)]
@@ -243,9 +245,11 @@ mod tests {
         Vec3::new(2.0, 2.0, 2.0),
         Vec3::new(-1.0, -1.0, -1.0)
     )]
-    fn test_mul(#[case] a: Vec3, #[case] b: Vec3, #[case] want: Vec3) {
+    fn test_mul(#[case] mut a: Vec3, #[case] b: Vec3, #[case] want: Vec3) {
         log::info!("{:?} * {:?} = {:?}?", a, b, want);
         assert_eq!(a * b, want);
+        a *= b;
+        assert_eq!(a, want);
     }
 
     #[test_log::test(rstest)]
@@ -256,10 +260,12 @@ mod tests {
         2.0,
         Vec3::new(-1.0, -1.0, -1.0)
     )]
-    fn test_mul_f32(#[case] a: Vec3, #[case] b: f32, #[case] want: Vec3) {
+    fn test_mul_f32(#[case] mut a: Vec3, #[case] b: f32, #[case] want: Vec3) {
         log::info!("{:?} * {:?} = {:?}?", a, b, want);
         assert_eq!(a * b, want);
         assert_eq!(b * a, want);
+        a *= b;
+        assert_eq!(a, want);
     }
 
     #[test_log::test(rstest)]
@@ -270,9 +276,12 @@ mod tests {
         2.0,
         Vec3::new(-0.25, -0.25, -0.25)
     )]
-    fn test_div_f32(#[case] a: Vec3, #[case] b: f32, #[case] want: Vec3) {
+    fn test_div_f32(#[case] mut a: Vec3, #[case] b: f32, #[case] want: Vec3) {
         log::info!("{:?} / {:?} = {:?}?", a, b, want);
         assert_eq!(a / b, want);
+        assert_eq!(b / a, want);
+        a /= b;
+        assert_eq!(a, want);
     }
 
     #[test_log::test(rstest)]
@@ -292,9 +301,11 @@ mod tests {
         Vec3::new(2.0, 2.0, 2.0),
         Vec3::new(-0.25, -0.25, -0.25)
     )]
-    fn test_div(#[case] a: Vec3, #[case] b: Vec3, #[case] want: Vec3) {
+    fn test_div(#[case] mut a: Vec3, #[case] b: Vec3, #[case] want: Vec3) {
         log::info!("{:?} / {:?} = {:?}?", a, b, want);
         assert_eq!(a / b, want);
+        a /= b;
+        assert_eq!(a, want);
     }
 
     #[test_log::test(rstest)]
