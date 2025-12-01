@@ -1,11 +1,11 @@
 use std::fmt;
-use std::ops::{Add, Div, Mul, Sub};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Vec3 {
-    x: f32,
-    y: f32,
-    z: f32,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
 }
 
 pub type Point3 = Vec3;
@@ -13,9 +13,9 @@ pub type Colour = Vec3;
 
 impl Vec3 {
     pub fn new(x: f32, y: f32, z: f32) -> Self {
-        log::debug!("Making Vec3 using x: {x}, y: {y}, z: {z}");
         Self { x, y, z }
     }
+
     pub fn write_colour(&self) {
         let r = self.x;
         let g = self.y;
@@ -27,30 +27,11 @@ impl Vec3 {
 
         println!("{rbyte} {gbyte} {bbyte}");
     }
-
-    pub fn x(self) -> f32 {
-        self.x
-    }
-    pub fn y(self) -> f32 {
-        self.y
-    }
-    pub fn z(self) -> f32 {
-        self.z
-    }
 }
 
 impl fmt::Display for Vec3 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{} {} {}", self.x, self.y, self.z)
-    }
-}
-
-impl PartialEq for Vec3 {
-    fn eq(&self, other: &Self) -> bool {
-        self.x == other.x && self.y == other.y && self.z == other.z
-    }
-    fn ne(&self, other: &Self) -> bool {
-        self.x != other.x || self.y != other.y || self.z != other.z
     }
 }
 
@@ -65,6 +46,14 @@ impl Mul for Vec3 {
     }
 }
 
+impl MulAssign<f32> for Vec3 {
+    fn mul_assign(&mut self, t: f32) {
+        self.x *= t;
+        self.y *= t;
+        self.z *= t;
+    }
+}
+
 impl Div for Vec3 {
     type Output = Self;
     fn div(self, rhs: Self) -> Self::Output {
@@ -73,6 +62,14 @@ impl Div for Vec3 {
             y: self.y / rhs.y,
             z: self.z / rhs.z,
         }
+    }
+}
+
+impl DivAssign<f32> for Vec3 {
+    fn div_assign(&mut self, t: f32) {
+        self.x /= t;
+        self.y /= t;
+        self.z /= t;
     }
 }
 
@@ -87,6 +84,14 @@ impl Add for Vec3 {
     }
 }
 
+impl AddAssign for Vec3 {
+    fn add_assign(&mut self, rhs: Self) {
+        self.x += rhs.x;
+        self.y += rhs.y;
+        self.z += rhs.z;
+    }
+}
+
 impl Sub for Vec3 {
     type Output = Self;
     fn sub(self, rhs: Self) -> Self::Output {
@@ -95,6 +100,14 @@ impl Sub for Vec3 {
             y: self.y - rhs.y,
             z: self.z - rhs.z,
         }
+    }
+}
+
+impl SubAssign for Vec3 {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.x -= rhs.x;
+        self.y -= rhs.y;
+        self.z -= rhs.z;
     }
 }
 
@@ -113,11 +126,22 @@ impl Div<f32> for Vec3 {
     type Output = Self;
 
     fn div(self, t: f32) -> Self {
-        Self {
-            x: self.x / t,
-            y: self.y / t,
-            z: self.z / t,
-        }
+        self * (1.0 / t) // Optimization: Multiply by inverse is faster than division
+    }
+}
+
+impl Mul<Vec3> for f32 {
+    type Output = Vec3;
+    fn mul(self, v: Vec3) -> Vec3 {
+        Vec3::new(v.x * self, v.y * self, v.z * self)
+    }
+}
+
+impl Div<Vec3> for f32 {
+    type Output = Vec3;
+
+    fn div(self, v: Vec3) -> Vec3 {
+        Vec3::new(v.x / self, v.y / self, v.z / self)
     }
 }
 
@@ -172,6 +196,24 @@ mod tests {
     #[case(
         Vec3::new(2.0, 2.0, 2.0),
         Vec3::new(1.0, 1.0, 1.0),
+        Vec3::new(3.0, 3.0, 3.0)
+    )]
+    #[case(
+        Vec3::new(-0.5, -0.5, -0.5),
+        Vec3::new(1.0, 1.0, 1.0),
+        Vec3::new(0.5, 0.5, 0.5)
+    )]
+    fn test_add_assign(#[case] mut a: Vec3, #[case] b: Vec3, #[case] want: Vec3) {
+        a += b;
+        log::info!("{:?} + {:?} = {:?}?", a, b, want);
+        assert_eq!(a, want);
+    }
+
+    #[test_log::test(rstest)]
+    #[rstest]
+    #[case(
+        Vec3::new(2.0, 2.0, 2.0),
+        Vec3::new(1.0, 1.0, 1.0),
         Vec3::new(1.0, 1.0, 1.0)
     )]
     #[case(
@@ -217,6 +259,7 @@ mod tests {
     fn test_mul_f32(#[case] a: Vec3, #[case] b: f32, #[case] want: Vec3) {
         log::info!("{:?} * {:?} = {:?}?", a, b, want);
         assert_eq!(a * b, want);
+        assert_eq!(b * a, want);
     }
 
     #[test_log::test(rstest)]
@@ -256,25 +299,6 @@ mod tests {
 
     #[test_log::test(rstest)]
     #[rstest]
-    #[case(Vec3::new(2.0, 2.0, 2.0), Vec3::new(1.0, 1.0, 1.0), false)]
-    #[case(Vec3::new(2.0, 2.0, 2.0), Vec3::new(2.0, 2.0, 2.0), true)]
-    fn test_equality(#[case] a: Vec3, #[case] b: Vec3, #[case] want: bool) {
-        log::info!("({:?} == {:?}) == {}?", a, b, want);
-        assert_eq!(a == b, want);
-        assert_eq!(a != b, !want);
-    }
-
-    #[test_log::test(rstest)]
-    #[rstest]
-    fn test_callables() {
-        let v = Vec3::new(2.0, 3.0, 4.0);
-        assert_eq!(v.x(), 2.0);
-        assert_eq!(v.y(), 3.0);
-        assert_eq!(v.z(), 4.0);
-    }
-
-    #[test_log::test(rstest)]
-    #[rstest]
     fn test_vec3_creation() {
         assert_eq!(
             Vec3::new(1.0, 1.2, 1.4),
@@ -294,5 +318,7 @@ mod tests {
         let r = Ray::new(origin, direction);
         assert_eq!(r.direction(), direction);
         assert_eq!(r.origin(), origin);
+        assert_eq!(r.at(1.0), Point3::new(3.0, 3.0, 3.0));
+        assert_eq!(r.at(2.0), Point3::new(5.0, 5.0, 5.0));
     }
 }
