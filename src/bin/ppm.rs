@@ -10,8 +10,8 @@ fn main() {
         log::info!("Scanlines remaining: {}", image_height - j);
         for i in 0..image_width {
             let pixel_colour = Colour::new(
-                i as f32 / (image_width - 1) as f32,
-                j as f32 / (image_height - 1) as f32,
+                i as f64 / (image_width - 1) as f64,
+                j as f64 / (image_height - 1) as f64,
                 0.0,
             );
             pixel_colour.write_colour();
