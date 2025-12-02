@@ -3,16 +3,16 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Vec3 {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
 }
 
 pub type Point3 = Vec3;
 pub type Colour = Vec3;
 
 impl Vec3 {
-    pub fn new(x: f32, y: f32, z: f32) -> Self {
+    pub fn new(x: f64, y: f64, z: f64) -> Self {
         Self { x, y, z }
     }
 
@@ -28,7 +28,7 @@ impl Vec3 {
         println!("{rbyte} {gbyte} {bbyte}");
     }
 
-    pub fn dot(self, other: Vec3) -> f32 {
+    pub fn dot(self, other: Vec3) -> f64 {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
 
@@ -40,11 +40,11 @@ impl Vec3 {
         }
     }
 
-    pub fn length_squared(&self) -> f32 {
+    pub fn length_squared(&self) -> f64 {
         self.x * self.x + self.y * self.y + self.z * self.z
     }
 
-    pub fn length(&self) -> f32 {
+    pub fn length(&self) -> f64 {
         self.length_squared().sqrt()
     }
 
@@ -135,9 +135,9 @@ impl SubAssign for Vec3 {
     }
 }
 
-impl Mul<f32> for Vec3 {
+impl Mul<f64> for Vec3 {
     type Output = Self;
-    fn mul(self, t: f32) -> Self {
+    fn mul(self, t: f64) -> Self {
         Self {
             x: self.x * t,
             y: self.y * t,
@@ -146,38 +146,38 @@ impl Mul<f32> for Vec3 {
     }
 }
 
-impl MulAssign<f32> for Vec3 {
-    fn mul_assign(&mut self, t: f32) {
+impl MulAssign<f64> for Vec3 {
+    fn mul_assign(&mut self, t: f64) {
         self.x *= t;
         self.y *= t;
         self.z *= t;
     }
 }
 
-impl Div<f32> for Vec3 {
+impl Div<f64> for Vec3 {
     type Output = Self;
 
-    fn div(self, t: f32) -> Self {
+    fn div(self, t: f64) -> Self {
         self * (1.0 / t) // Optimization: Multiply by inverse is faster than division
     }
 }
 
-impl DivAssign<f32> for Vec3 {
-    fn div_assign(&mut self, t: f32) {
+impl DivAssign<f64> for Vec3 {
+    fn div_assign(&mut self, t: f64) {
         self.x /= t;
         self.y /= t;
         self.z /= t;
     }
 }
 
-impl Mul<Vec3> for f32 {
+impl Mul<Vec3> for f64 {
     type Output = Vec3;
     fn mul(self, v: Vec3) -> Vec3 {
         v * self
     }
 }
 
-impl Div<Vec3> for f32 {
+impl Div<Vec3> for f64 {
     type Output = Vec3;
 
     fn div(self, v: Vec3) -> Vec3 {
@@ -195,8 +195,7 @@ impl Ray {
         Self { origin, direction }
     }
 
-    pub fn at(&self, t: f32) -> Point3 {
-        // P(t) = A + tb
+    pub fn at(&self, t: f64) -> Point3 {
         self.origin + (self.direction * t)
     }
 }
@@ -276,7 +275,7 @@ mod tests {
         2.0,
         Vec3::new(-1.0, -1.0, -1.0)
     )]
-    fn test_mul_f32(#[case] mut a: Vec3, #[case] b: f32, #[case] want: Vec3) {
+    fn test_mul_f64(#[case] mut a: Vec3, #[case] b: f64, #[case] want: Vec3) {
         log::info!("{:?} * {:?} = {:?}?", a, b, want);
         assert_eq!(a * b, want);
         assert_eq!(b * a, want);
@@ -292,7 +291,7 @@ mod tests {
         2.0,
         Vec3::new(-0.25, -0.25, -0.25)
     )]
-    fn test_div_f32(#[case] mut a: Vec3, #[case] b: f32, #[case] want: Vec3) {
+    fn test_div_f64(#[case] mut a: Vec3, #[case] b: f64, #[case] want: Vec3) {
         log::info!("{:?} / {:?} = {:?}?", a, b, want);
         assert_eq!(a / b, want);
         assert_eq!(b / a, want);
