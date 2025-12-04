@@ -47,10 +47,10 @@ impl Vec3 {
     pub fn length(&self) -> f64 {
         self.length_squared().sqrt()
     }
+}
 
-    pub fn unit_vector(self) -> Vec3 {
-        self / self.length()
-    }
+pub fn unit_vector(v: &Vec3) -> Vec3 {
+    *v / v.length()
 }
 
 impl fmt::Display for Vec3 {
