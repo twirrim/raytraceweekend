@@ -1,3 +1,5 @@
+use indicatif::{ProgressIterator, ProgressStyle};
+
 use raytraceweekend::{Colour, Point3, Ray, Vec3, unit_vector};
 
 fn ray_color(r: &Ray) -> Colour {
@@ -49,9 +51,14 @@ fn main() {
     let pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
     log::debug!("pixel00_loc: {:?}", pixel00_loc);
 
+    log::info!("Rendering image");
+    // Define the style
+    let style = ProgressStyle::with_template(
+        "[{eta_precise}/{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}",
+    )
+    .unwrap();
     println!("P3\n{image_width} {image_height}\n255\n");
-    for j in 0..image_height {
-        log::info!("Scanlines remaining: {}", image_height - j);
+    for j in (0..image_height).progress_with_style(style) {
         for i in 0..image_width {
             let pixel_center =
                 pixel00_loc + (i as f64 * pixel_delta_u) + (j as f64 * pixel_delta_v);
