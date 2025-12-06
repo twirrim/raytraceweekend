@@ -28,10 +28,6 @@ impl Vec3 {
         println!("{rbyte} {gbyte} {bbyte}");
     }
 
-    pub fn dot(self, other: Vec3) -> f64 {
-        self.x * other.x + self.y * other.y + self.z * other.z
-    }
-
     pub fn cross(self, other: Vec3) -> Vec3 {
         Self {
             x: self.y * other.z - self.z * other.y,
@@ -51,6 +47,10 @@ impl Vec3 {
 
 pub fn unit_vector(v: &Vec3) -> Vec3 {
     *v / v.length()
+}
+
+pub fn dot(left: &Vec3, right: &Vec3) -> f64 {
+    left.x * right.x + left.y * right.y + left.z * right.z
 }
 
 impl fmt::Display for Vec3 {
@@ -198,6 +198,16 @@ impl Ray {
     pub fn at(&self, t: f64) -> Point3 {
         self.origin + (self.direction * t)
     }
+}
+
+// Add sphere related methods.
+pub fn hit_sphere(centre: &Point3, radius: f64, r: &Ray) -> bool {
+    let oc: Vec3 = *centre - r.origin;
+    let a = dot(&r.direction, &r.direction);
+    let b = -2.0 * dot(&r.direction, &oc);
+    let c = dot(&oc, &oc) - radius * radius;
+    let discriminant = b * b - 4.0 * a * c;
+    return discriminant >= 0.0;
 }
 
 #[cfg(test)]
