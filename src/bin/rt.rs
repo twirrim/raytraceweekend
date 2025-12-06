@@ -1,8 +1,12 @@
 use indicatif::{ProgressIterator, ProgressStyle};
 
-use raytraceweekend::{Colour, Point3, Ray, Vec3, unit_vector};
+use raytraceweekend::{Colour, Point3, Ray, Vec3, hit_sphere, unit_vector};
 
 fn ray_color(r: &Ray) -> Colour {
+    // Add a sphere to the image
+    if hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, r) {
+        return Colour::new(1.0, 0.0, 0.0);
+    }
     let unit_direction = unit_vector(&r.direction);
     let a = 0.5 * (unit_direction.y + 1.0);
     return (1.0 - a) * Colour::new(1.0, 1.0, 1.0) + a * Colour::new(0.5, 0.7, 1.0);
@@ -14,6 +18,7 @@ fn main() {
     // Image
     let aspect_ratio: f64 = 16.0 / 9.0;
     let image_width: i32 = 400;
+
     // Build the image based on the width and ratio, ensuring it is at least 1
     let image_height: i32 = match image_width as f64 / aspect_ratio {
         val if val > 1.0 => val as i32,
