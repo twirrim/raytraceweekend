@@ -4,8 +4,10 @@ use raytraceweekend::{Colour, Point3, Ray, Vec3, hit_sphere, unit_vector};
 
 fn ray_color(r: &Ray) -> Colour {
     // Add a sphere to the image
-    if hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, r) {
-        return Colour::new(1.0, 0.0, 0.0);
+    let t = hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, r);
+    if t > 0.0 {
+        let normal = unit_vector(&(r.at(t) - Vec3::new(0.0, 0.0, -1.0)));
+        return 0.5 * Colour::new(normal.x + 1.0, normal.y + 1.0, normal.z + 1.0);
     }
     let unit_direction = unit_vector(&r.direction);
     let a = 0.5 * (unit_direction.y + 1.0);
