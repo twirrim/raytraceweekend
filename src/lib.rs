@@ -201,13 +201,17 @@ impl Ray {
 }
 
 // Add sphere related methods.
-pub fn hit_sphere(centre: &Point3, radius: f64, r: &Ray) -> bool {
-    let oc: Vec3 = *centre - r.origin;
-    let a = dot(&r.direction, &r.direction);
-    let b = -2.0 * dot(&r.direction, &oc);
-    let c = dot(&oc, &oc) - radius * radius;
-    let discriminant = b * b - 4.0 * a * c;
-    return discriminant >= 0.0;
+pub fn hit_sphere(centre: &Point3, radius: f64, r: &Ray) -> f64 {
+    let oc = *centre - r.origin;
+    let a = r.direction.length_squared();
+    let h = dot(&r.direction, &oc);
+    let c = oc.length_squared() - radius * radius;
+    let discriminant = h * h - a * c;
+    if discriminant < 0.0 {
+        return -1.0;
+    } else {
+        return (h - discriminant.sqrt()) / (2.0 * a);
+    }
 }
 
 #[cfg(test)]
