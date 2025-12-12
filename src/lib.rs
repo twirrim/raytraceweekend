@@ -17,7 +17,7 @@ impl Vec3 {
     }
 
     pub fn write_colour(&self) -> String {
-        let clamp = |v: f64| v.max(0.0).min(0.999);
+        let clamp = |v: f64| v.clamp(0.0, 0.999);
         let rbyte = (256.0 * clamp(self.x)) as usize;
         let gbyte = (256.0 * clamp(self.y)) as usize;
         let bbyte = (256.0 * clamp(self.z)) as usize;
@@ -204,9 +204,9 @@ pub fn hit_sphere(centre: &Point3, radius: f64, r: &Ray) -> f64 {
     let c = oc.length_squared() - radius * radius;
     let discriminant = h * h - a * c;
     if discriminant < 0.0 {
-        return -1.0;
+        -1.0
     } else {
-        return (h - discriminant.sqrt()) / a;
+        (h - discriminant.sqrt()) / a
     }
 }
 
