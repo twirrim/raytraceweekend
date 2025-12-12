@@ -210,6 +210,61 @@ pub fn hit_sphere(centre: &Point3, radius: f64, r: &Ray) -> f64 {
     }
 }
 
+#[derive(Debug)]
+struct HitRecord {
+    p: Point3,
+    normal: Vec3,
+    t: f64,
+}
+
+trait Hittable {
+    fn hit(self, r: &Ray, ray_tmin: f64, ray_tmax: f64, rec: &mut HitRecord) -> bool;
+}
+
+#[derive(Debug)]
+struct Sphere {
+    centre: Point3,
+    radius: f64,
+}
+
+impl Sphere {
+    fn new(centre: Point3, radius: f64) -> Self {
+        Self {
+            centre,
+            radius: radius.max(0.0),
+        }
+    }
+}
+
+impl Hittable for Sphere {
+    fn hit(self, r: &Ray, ray_tmin: f64, ray_tmax: f64, rec: &mut HitRecord) -> bool {
+        let oc: Vec3 = self.centre - r.origin;
+        let a = r.direction.length_squared();
+        let h = dot(&r.direction, &oc);
+        let c = oc.length_squared() - self.radius * self.radius;
+
+        let discriminant = h * h - a * c;
+        if discriminant < 0.0 {
+            return false;
+        }
+
+        let sqrtd = discriminant.sqrt();
+        let mut root = (h - sqrtd) / a;
+        if (root <= ray_tmin || ray_tmax <= root) {
+            root = (h + sqrtd) / a;
+            if (root <= ray_tmin || ray_tmax <= root) {
+                return false;
+            }
+        }
+
+        rec.t = root;
+        rec.p = r.at(rec.t);
+        rec.normal = (rec.p - self.centre) / self.radius;
+
+        true
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
