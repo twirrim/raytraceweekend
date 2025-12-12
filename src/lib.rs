@@ -1,6 +1,7 @@
+pub mod camera;
+pub mod hit;
 pub mod ray;
 pub mod sphere;
-pub mod hit;
 
 use std::fmt;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
@@ -197,21 +198,6 @@ impl Div<Vec3> for f64 {
         v / self
     }
 }
-
-// Add sphere related methods.
-pub fn hit_sphere(centre: &Point3, radius: f64, r: &Ray) -> f64 {
-    let oc = *centre - r.origin;
-    let a = r.direction.length_squared();
-    let h = dot(&r.direction, &oc);
-    let c = oc.length_squared() - radius * radius;
-    let discriminant = h * h - a * c;
-    if discriminant < 0.0 {
-        -1.0
-    } else {
-        (h - discriminant.sqrt()) / a
-    }
-}
-
 
 #[cfg(test)]
 mod tests {

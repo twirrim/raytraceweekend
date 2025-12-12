@@ -1,6 +1,7 @@
-use crate::{Vec3, Point3, dot};
-use crate::ray::{Ray};
+use std::ops::Range;
 
+use crate::ray::Ray;
+use crate::{Point3, Vec3, dot};
 
 #[derive(Debug)]
 pub struct HitRecord {
@@ -24,7 +25,7 @@ impl HitRecord {
 }
 
 pub trait Hittable {
-    fn hit(&self, r: &Ray, ray_tmin: f64, ray_tmax: f64) -> Option<HitRecord>;
+    fn hit(&self, r: &Ray, interval: &Range<f64>) -> Option<HitRecord>;
 }
 
 pub struct HittableList {
@@ -54,13 +55,13 @@ impl HittableList {
 }
 
 impl Hittable for HittableList {
-    fn hit(&self, r: &Ray, ray_tmin: f64, ray_tmax: f64) -> Option<HitRecord> {
+    fn hit(&self, r: &Ray, interval: &Range<f64>) -> Option<HitRecord> {
+        let mut local_interval = interval.clone();
         let mut hit_record = None;
-        let mut closest_so_far = ray_tmax;
 
         for object in &self.objects {
-            if let Some(rec) = object.hit(r, ray_tmin, closest_so_far) {
-                closest_so_far = rec.t;
+            if let Some(rec) = object.hit(r, &local_interval) {
+                local_interval.end = rec.t;
                 hit_record = Some(rec);
             }
         }
