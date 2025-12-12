@@ -283,13 +283,13 @@ impl Hittable for HittableList {
 }
 
 #[derive(Debug)]
-struct Sphere {
-    centre: Point3,
-    radius: f64,
+pub struct Sphere {
+    pub centre: Point3,
+    pub radius: f64,
 }
 
 impl Sphere {
-    fn new(centre: Point3, radius: f64) -> Self {
+    pub fn new(centre: Point3, radius: f64) -> Self {
         Self {
             centre,
             radius: radius.max(0.0),
