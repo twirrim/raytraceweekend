@@ -250,6 +250,12 @@ pub struct HittableList {
     pub objects: Vec<Box<dyn Hittable>>,
 }
 
+impl Default for HittableList {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl HittableList {
     pub fn new() -> Self {
         Self {
