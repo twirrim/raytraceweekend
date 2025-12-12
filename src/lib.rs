@@ -1,6 +1,11 @@
 use std::fmt;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
+pub mod ray;
+pub mod sphere;
+
+use crate::ray::Ray;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Vec3 {
     pub x: f64,
@@ -192,21 +197,6 @@ impl Div<Vec3> for f64 {
     }
 }
 
-pub struct Ray {
-    pub origin: Point3,
-    pub direction: Vec3,
-}
-
-impl Ray {
-    pub fn new(origin: Point3, direction: Vec3) -> Self {
-        Self { origin, direction }
-    }
-
-    pub fn at(&self, t: f64) -> Point3 {
-        self.origin + (self.direction * t)
-    }
-}
-
 // Add sphere related methods.
 pub fn hit_sphere(centre: &Point3, radius: f64, r: &Ray) -> f64 {
     let oc = *centre - r.origin;
@@ -285,59 +275,6 @@ impl Hittable for HittableList {
         }
 
         hit_record
-    }
-}
-
-#[derive(Debug)]
-pub struct Sphere {
-    pub centre: Point3,
-    pub radius: f64,
-}
-
-impl Sphere {
-    pub fn new(centre: Point3, radius: f64) -> Self {
-        Self {
-            centre,
-            radius: radius.max(0.0),
-        }
-    }
-}
-
-impl Hittable for Sphere {
-    fn hit(&self, r: &Ray, ray_tmin: f64, ray_tmax: f64) -> Option<HitRecord> {
-        let oc: Vec3 = self.centre - r.origin;
-        let a = r.direction.length_squared();
-        let h = dot(&r.direction, &oc);
-        let c = oc.length_squared() - self.radius * self.radius;
-
-        let discriminant = h * h - a * c;
-        if discriminant < 0.0 {
-            return None;
-        }
-
-        let sqrtd = discriminant.sqrt();
-        let mut root = (h - sqrtd) / a;
-        if root <= ray_tmin || ray_tmax <= root {
-            root = (h + sqrtd) / a;
-            if root <= ray_tmin || ray_tmax <= root {
-                return None;
-            }
-        }
-
-        let t = root;
-        let p = r.at(t);
-        let outward_normal = (p - self.centre) / self.radius;
-
-        let mut rec = HitRecord {
-            t,
-            p,
-            normal: outward_normal,
-            front_face: false, // placeholder
-        };
-
-        rec.set_face_normal(r, &outward_normal);
-
-        Some(rec)
     }
 }
 

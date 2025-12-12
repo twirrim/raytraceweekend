@@ -1,6 +1,8 @@
 use indicatif::{ProgressIterator, ProgressStyle};
 
-use raytraceweekend::{Colour, Hittable, HittableList, Point3, Ray, Sphere, Vec3, unit_vector};
+use raytraceweekend::ray::Ray;
+use raytraceweekend::sphere::Sphere;
+use raytraceweekend::{Colour, Hittable, HittableList, Point3, Vec3, unit_vector};
 
 fn ray_color(r: &Ray, world: &HittableList) -> Colour {
     // Find the first object that intersects the ray, and return those details
