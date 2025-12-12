@@ -16,16 +16,12 @@ impl Vec3 {
         Self { x, y, z }
     }
 
-    pub fn write_colour(&self) {
-        let r = self.x;
-        let g = self.y;
-        let b = self.z;
-
-        let rbyte = (255.999 * r) as usize;
-        let gbyte = (255.999 * g) as usize;
-        let bbyte = (255.999 * b) as usize;
-
-        println!("{rbyte} {gbyte} {bbyte}");
+    pub fn write_colour(&self) -> String {
+        let clamp = |v: f64| v.max(0.0).min(0.999);
+        let rbyte = (256.0 * clamp(self.x)) as usize;
+        let gbyte = (256.0 * clamp(self.y)) as usize;
+        let bbyte = (256.0 * clamp(self.z)) as usize;
+        format!("{rbyte} {gbyte} {bbyte}")
     }
 
     pub fn cross(self, other: Vec3) -> Vec3 {
@@ -210,7 +206,7 @@ pub fn hit_sphere(centre: &Point3, radius: f64, r: &Ray) -> f64 {
     if discriminant < 0.0 {
         return -1.0;
     } else {
-        return (h - discriminant.sqrt()) / (2.0 * a);
+        return (h - discriminant.sqrt()) / a;
     }
 }
 
@@ -348,6 +344,31 @@ mod tests {
                 z: 1.4
             }
         );
+    }
+
+    #[test_log::test(rstest)]
+    #[rstest]
+    fn test_vec3_length_squared() {
+        let v = Vec3::new(1.0, 1.0, 1.0);
+        assert_eq!(v.length_squared(), 3.0);
+        let v = Vec3::new(4.0, 4.0, 4.0);
+        assert_eq!(v.length_squared(), 48.0);
+    }
+
+    #[test_log::test(rstest)]
+    #[rstest]
+    fn test_vec3_cross() {
+        let v = Vec3::new(2.0, 3.0, 4.0);
+        let w = Vec3::new(2.0, 2.0, 2.0);
+        assert_eq!(v.cross(w), Vec3::new(-2.0, 4.0, -2.0));
+    }
+
+    #[test_log::test(rstest)]
+    #[rstest]
+    fn test_vec3_dot() {
+        let a = Vec3::new(2.0, 3.0, 4.0);
+        let b = Vec3::new(1.0, 2.0, 3.0);
+        assert_eq!(dot(&a, &b), 20.0);
     }
 
     #[test_log::test(rstest)]
