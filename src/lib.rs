@@ -1,5 +1,5 @@
 use std::fmt;
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Vec3 {
@@ -52,6 +52,17 @@ pub fn dot(left: &Vec3, right: &Vec3) -> f64 {
 impl fmt::Display for Vec3 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{} {} {}", self.x, self.y, self.z)
+    }
+}
+
+impl Neg for Vec3 {
+    type Output = Self;
+    fn neg(self) -> Self::Output {
+        Self {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
+        }
     }
 }
 
@@ -211,14 +222,64 @@ pub fn hit_sphere(centre: &Point3, radius: f64, r: &Ray) -> f64 {
 }
 
 #[derive(Debug)]
-struct HitRecord {
-    p: Point3,
-    normal: Vec3,
-    t: f64,
+pub struct HitRecord {
+    pub p: Point3,
+    pub normal: Vec3,
+    pub t: f64,
+    pub front_face: bool,
 }
 
-trait Hittable {
-    fn hit(self, r: &Ray, ray_tmin: f64, ray_tmax: f64, rec: &mut HitRecord) -> bool;
+impl HitRecord {
+    pub fn set_face_normal(&mut self, r: &Ray, outward_normal: &Vec3) {
+        // Sets the hit record normal vector.
+        // NOTE: the parameter 'outward_normal' is assumed to have unit length
+
+        self.front_face = dot(&r.direction, outward_normal) < 0.0;
+        self.normal = match self.front_face {
+            true => *outward_normal,
+            false => -*outward_normal,
+        };
+    }
+}
+
+pub trait Hittable {
+    fn hit(&self, r: &Ray, ray_tmin: f64, ray_tmax: f64) -> Option<HitRecord>;
+}
+
+pub struct HittableList {
+    pub objects: Vec<Box<dyn Hittable>>,
+}
+
+impl HittableList {
+    pub fn new() -> Self {
+        Self {
+            objects: Vec::new(),
+        }
+    }
+
+    pub fn clear(&mut self) {
+        self.objects.clear();
+    }
+
+    pub fn add(&mut self, object: Box<dyn Hittable>) {
+        self.objects.push(object);
+    }
+}
+
+impl Hittable for HittableList {
+    fn hit(&self, r: &Ray, ray_tmin: f64, ray_tmax: f64) -> Option<HitRecord> {
+        let mut hit_record = None;
+        let mut closest_so_far = ray_tmax;
+
+        for object in &self.objects {
+            if let Some(rec) = object.hit(r, ray_tmin, closest_so_far) {
+                closest_so_far = rec.t;
+                hit_record = Some(rec);
+            }
+        }
+
+        hit_record
+    }
 }
 
 #[derive(Debug)]
@@ -237,7 +298,7 @@ impl Sphere {
 }
 
 impl Hittable for Sphere {
-    fn hit(self, r: &Ray, ray_tmin: f64, ray_tmax: f64, rec: &mut HitRecord) -> bool {
+    fn hit(&self, r: &Ray, ray_tmin: f64, ray_tmax: f64) -> Option<HitRecord> {
         let oc: Vec3 = self.centre - r.origin;
         let a = r.direction.length_squared();
         let h = dot(&r.direction, &oc);
@@ -245,7 +306,7 @@ impl Hittable for Sphere {
 
         let discriminant = h * h - a * c;
         if discriminant < 0.0 {
-            return false;
+            return None;
         }
 
         let sqrtd = discriminant.sqrt();
@@ -253,15 +314,24 @@ impl Hittable for Sphere {
         if root <= ray_tmin || ray_tmax <= root {
             root = (h + sqrtd) / a;
             if root <= ray_tmin || ray_tmax <= root {
-                return false;
+                return None;
             }
         }
 
-        rec.t = root;
-        rec.p = r.at(rec.t);
-        rec.normal = (rec.p - self.centre) / self.radius;
+        let t = root;
+        let p = r.at(t);
+        let outward_normal = (p - self.centre) / self.radius;
 
-        true
+        let mut rec = HitRecord {
+            t,
+            p,
+            normal: outward_normal,
+            front_face: false, // placeholder
+        };
+
+        rec.set_face_normal(r, &outward_normal);
+
+        Some(rec)
     }
 }
 
@@ -269,6 +339,20 @@ impl Hittable for Sphere {
 mod tests {
     use super::*;
     use rstest::rstest;
+
+    #[test_log::test(rstest)]
+    #[rstest]
+    #[case(Vec3::new(2.0, 3.0, 4.0),Vec3::new(-2.0, -3.0, -4.0))] // all positives
+    #[case(Vec3::new(-2.0, -3.0, -4.0),Vec3::new(2.0, 3.0, 4.0))] // all negatives
+    #[case(Vec3::new(2.0, -3.0, 4.0),Vec3::new(-2.0, 3.0, -4.0))] // mix positive/negative
+    fn test_neg_vec3(#[case] give: Vec3, #[case] want: Vec3) {
+        log::info!("Give: {:?}, Want: {:?}", give, want);
+        let negated = -give;
+        assert_eq!(negated, want);
+        // double negated should match "give"
+        let double_negated = -negated;
+        assert_eq!(double_negated, give);
+    }
 
     #[test_log::test(rstest)]
     #[rstest]
