@@ -68,8 +68,7 @@ fn main() {
     for j in (0..image_height).progress_with_style(style) {
         let row_offset = j as f64 * pixel_delta_v;
         for i in 0..image_width {
-            let pixel_center =
-                pixel00_loc + (i as f64 * pixel_delta_u) + row_offset;
+            let pixel_center = pixel00_loc + (i as f64 * pixel_delta_u) + row_offset;
             let ray_direction = pixel_center - camera_centre;
             let r = Ray::new(camera_centre, ray_direction);
 
