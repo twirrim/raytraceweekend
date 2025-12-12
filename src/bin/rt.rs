@@ -66,14 +66,15 @@ fn main() {
     .unwrap();
     println!("P3\n{image_width} {image_height}\n255\n");
     for j in (0..image_height).progress_with_style(style) {
+        let row_offset = j as f64 * pixel_delta_v;
         for i in 0..image_width {
             let pixel_center =
-                pixel00_loc + (i as f64 * pixel_delta_u) + (j as f64 * pixel_delta_v);
+                pixel00_loc + (i as f64 * pixel_delta_u) + row_offset;
             let ray_direction = pixel_center - camera_centre;
             let r = Ray::new(camera_centre, ray_direction);
 
             let pixel_colour = ray_color(&r);
-            pixel_colour.write_colour();
+            println!("{}", pixel_colour.write_colour());
         }
     }
     log::info!("Done");
