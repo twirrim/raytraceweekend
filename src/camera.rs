@@ -71,11 +71,14 @@ impl Camera {
         }
     }
 
-    fn ray_colour(r: &Ray, world: &HittableList) -> Colour {
+    fn ray_colour(r: &Ray, world: &HittableList, depth: isize) -> Colour {
+            if depth <= 0 {
+        return Colour::new(0.0, 0.0, 0.0);
+    }
         // Find the first object that intersects the ray, and return those details
-        if let Some(hit_record) = world.hit(r, &(0.0..f64::INFINITY)) {
+        if let Some(hit_record) = world.hit(r, &(0.001..f64::INFINITY)) {
             let direction = random_on_hemisphere(&hit_record.normal);
-            return 0.5 * Camera::ray_colour(&Ray::new(hit_record.p, direction), world);
+            return 0.5 * Camera::ray_colour(&Ray::new(hit_record.p, direction), world, depth - 1);
             // return 0.5 * (hit_record.normal + Colour::new(1.0, 1.0, 1.0));
         }
         // No objects were found, so.. continue to the horizon.
@@ -86,18 +89,23 @@ impl Camera {
 
     pub fn render(&self, world: &HittableList) {
         log::info!("Rendering image");
-        // Define the style
+        // Set a recursion limit
+        let max_depth = 50;
+
+        // Define the progress bar style
         let style = ProgressStyle::with_template(
-            "[{eta_precise}/{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}",
+            "[Elapsed: {elapsed_precise}| ETA: {eta_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}",
         )
         .unwrap();
+
+        // Render the image in PPM format
         println!("P3\n{} {}\n255\n", self.image_width, self.image_height);
         for j in (0..self.image_height).progress_with_style(style) {
             for i in 0..self.image_width {
                 let mut pixel_colour: Colour = Colour::new(0.0, 0.0, 0.0);
                 for _sample in 0..self.samples_per_pixel {
                     let r: Ray = self.get_ray(i, j);
-                    pixel_colour += Camera::ray_colour(&r, world);
+                    pixel_colour += Camera::ray_colour(&r, world, max_depth);
                 }
                 println!(
                     "{}",
