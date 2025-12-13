@@ -23,6 +23,18 @@ impl Vec3 {
         Self { x, y, z }
     }
 
+    pub fn random() -> Self {
+        Vec3::new(random_f64(), random_f64(), random_f64())
+    }
+
+    pub fn random_range(min: f64, max: f64) -> Self {
+        Vec3::new(
+            random_f64_range(min, max),
+            random_f64_range(min, max),
+            random_f64_range(min, max),
+        )
+    }
+
     pub fn write_colour(&self) -> String {
         let clamp = |v: f64| v.clamp(0.0, 0.999);
         let rbyte = (256.0 * clamp(self.x)) as usize;
@@ -50,6 +62,25 @@ impl Vec3 {
 
 pub fn unit_vector(v: &Vec3) -> Vec3 {
     *v / v.length()
+}
+
+pub fn random_unit_vector() -> Vec3 {
+    loop {
+        let p = Vec3::random_range(-1.0, 1.0);
+        let lensq = p.length_squared();
+        // a "black hole" in the middle yields an Vec3(infinite, infinite, infinte)
+        // 1e-160 helps us avoid that black hole.
+        if 1e-160 < lensq && lensq <= 1.0 {
+            return p / lensq.sqrt();
+        }
+    }
+}
+pub fn random_on_hemisphere(normal: &Vec3) -> Vec3 {
+    let on_unit_sphere = random_unit_vector();
+    if dot(&on_unit_sphere, normal) > 0.0 {
+        return on_unit_sphere;
+    }
+    -on_unit_sphere
 }
 
 pub fn dot(left: &Vec3, right: &Vec3) -> f64 {
@@ -197,6 +228,18 @@ impl Div<Vec3> for f64 {
     fn div(self, v: Vec3) -> Vec3 {
         v / self
     }
+}
+
+// Not sure it's worth having separate methods for this?
+
+#[inline]
+fn random_f64() -> f64 {
+    rand::random_range(0.0..1.0)
+}
+
+#[inline]
+fn random_f64_range(min: f64, max: f64) -> f64 {
+    rand::random_range(min..max)
 }
 
 #[cfg(test)]

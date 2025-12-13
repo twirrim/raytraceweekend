@@ -2,7 +2,7 @@ use indicatif::{ProgressIterator, ProgressStyle};
 
 use crate::hit::{Hittable, HittableList};
 use crate::ray::Ray;
-use crate::{Colour, Point3, Vec3, unit_vector};
+use crate::{Colour, Point3, Vec3, random_f64, random_on_hemisphere, unit_vector};
 
 #[derive(Debug)]
 pub struct Camera {
@@ -12,18 +12,21 @@ pub struct Camera {
     pixel00_loc: Point3,
     pixel_delta_u: Vec3,
     pixel_delta_v: Vec3,
+    samples_per_pixel: usize,
+    pixel_samples_scale: f64,
 }
 
 impl Default for Camera {
     fn default() -> Self {
         let aspect_ratio = 1.0;
         let image_width = 400;
-        Camera::new(aspect_ratio, image_width)        
+        let samples_per_pixel = 10;
+        Camera::new(aspect_ratio, image_width, samples_per_pixel)
     }
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f64, image_width: usize) -> Self {
+    pub fn new(aspect_ratio: f64, image_width: usize, samples_per_pixel: usize) -> Self {
         // Build the image based on the width and ratio, ensuring it is at least 1
         let image_height: usize = match image_width as f64 / aspect_ratio {
             val if val > 1.0 => val as usize,
@@ -54,6 +57,7 @@ impl Camera {
             centre - Vec3::new(0.0, 0.0, focal_length) - viewport_u / 2.0 - viewport_v / 2.0;
         let pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
         log::debug!("pixel00_loc: {pixel00_loc:?}");
+        let pixel_samples_scale = 1.0 / samples_per_pixel as f64;
 
         Self {
             image_width,
@@ -62,13 +66,17 @@ impl Camera {
             pixel00_loc,
             pixel_delta_u,
             pixel_delta_v,
+            samples_per_pixel,
+            pixel_samples_scale,
         }
     }
 
     fn ray_colour(r: &Ray, world: &HittableList) -> Colour {
         // Find the first object that intersects the ray, and return those details
         if let Some(hit_record) = world.hit(r, &(0.0..f64::INFINITY)) {
-            return 0.5 * (hit_record.normal + Colour::new(1.0, 1.0, 1.0));
+            let direction = random_on_hemisphere(&hit_record.normal);
+            return 0.5 * Camera::ray_colour(&Ray::new(hit_record.p, direction), world);
+            // return 0.5 * (hit_record.normal + Colour::new(1.0, 1.0, 1.0));
         }
         // No objects were found, so.. continue to the horizon.
         let unit_direction = unit_vector(&r.direction);
@@ -85,16 +93,35 @@ impl Camera {
         .unwrap();
         println!("P3\n{} {}\n255\n", self.image_width, self.image_height);
         for j in (0..self.image_height).progress_with_style(style) {
-            let row_offset = j as f64 * self.pixel_delta_v;
             for i in 0..self.image_width {
-                let pixel_center = self.pixel00_loc + (i as f64 * self.pixel_delta_u) + row_offset;
-                let ray_direction = pixel_center - self.centre;
-                let r = Ray::new(self.centre, ray_direction);
-
-                let pixel_colour = Camera::ray_colour(&r, world);
-                println!("{}", pixel_colour.write_colour());
+                let mut pixel_colour: Colour = Colour::new(0.0, 0.0, 0.0);
+                for _sample in 0..self.samples_per_pixel {
+                    let r: Ray = self.get_ray(i, j);
+                    pixel_colour += Camera::ray_colour(&r, world);
+                }
+                println!(
+                    "{}",
+                    (self.pixel_samples_scale * pixel_colour).write_colour()
+                );
             }
         }
         log::info!("Done");
+    }
+
+    fn get_ray(&self, i: usize, j: usize) -> Ray {
+        // Construct a camera ray originating from the origin and directed at randomly sampled
+        // point around the pixel location i, j.
+        let offset = Camera::sample_square();
+        let pixel_sample = self.pixel00_loc
+            + ((i as f64 + offset.x) * self.pixel_delta_u)
+            + ((j as f64 + offset.y) * self.pixel_delta_v);
+        let ray_origin = self.centre;
+        let ray_direction = pixel_sample - ray_origin;
+
+        Ray::new(ray_origin, ray_direction)
+    }
+
+    fn sample_square() -> Vec3 {
+        return Vec3::new(random_f64() - 0.5, random_f64() - 0.5, 0.0);
     }
 }
